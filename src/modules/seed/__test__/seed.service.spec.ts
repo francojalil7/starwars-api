@@ -49,6 +49,10 @@ describe('SeedService', () => {
           useValue: {
             count: jest.fn().mockResolvedValue(0),
             save: jest.fn().mockResolvedValue([]),
+            createQueryBuilder: jest.fn().mockReturnThis(),
+            delete: jest.fn().mockReturnThis(),
+            where: jest.fn().mockReturnThis(),
+            execute: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

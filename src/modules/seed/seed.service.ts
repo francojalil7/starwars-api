@@ -63,11 +63,9 @@ export class SeedService {
   }
 
   async deleteTables() {
-    const queryBuilder = this.authRepository.createQueryBuilder();
-    await queryBuilder.delete().where({}).execute();
-
-    const userQueryBuilder = this.userRepository.createQueryBuilder();
-    await userQueryBuilder.delete().where({}).execute();
+    await this.moviesRepository.createQueryBuilder().delete().where({}).execute();
+    await this.authRepository.createQueryBuilder().delete().where({}).execute();
+    await this.userRepository.createQueryBuilder().delete().where({}).execute();
   }
 
   async insertAdmin() {

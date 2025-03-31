@@ -1,10 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 
-import { LoginUserDto, RegisterResponseDto } from './dto';
+import { ChangePasswordDto, LoginUserDto, RegisterResponseDto } from './dto';
 import { Auth } from './entities/auth.entity';
 import { RegisterUserDto } from './dto';
 import { UserService } from '../user/user.service';
@@ -67,6 +71,33 @@ export class AuthService {
     };
   }
 
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const { currentPassword, newPassword } = dto;
+
+    const auth = await this.authRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+
+    if (!auth) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, auth.password);
+    if (!isValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const salt = await bcrypt.genSalt();
+    auth.password = await bcrypt.hash(newPassword, salt);
+
+    await this.authRepository.save(auth);
+
+    return { message: 'Password changed successfully' };
+  }
   private getJWT(payload: JwtPayload) {
     return this.jwtService.sign(payload);
   }

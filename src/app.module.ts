@@ -1,14 +1,15 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { Auth } from './modules/auth/entities/auth.entity';
-import { UserController } from './modules/user/user.controller';
 import { UserModule } from './modules/user/user.module';
 import { SeedModule } from './modules/seed/seed.module';
 import { MoviesModule } from './modules/movies/movies.module';
 import { CommonModule } from './modules/common/common.module';
+import { LoggerMiddleware } from './modules/common/middleware/logger.middleware';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CommonModule } from './modules/common/common.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     CommonModule,
     UserModule,
@@ -31,7 +33,11 @@ import { CommonModule } from './modules/common/common.module';
     MoviesModule,
   ],
 
-  controllers: [UserController],
+  controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 
 import { MoviesService } from '../movies.service';
 import { Movie } from '../entities/movie.entity';
+import { CreateMovieDto, UpdateMovieDto } from '../dto';
 
 describe('MoviesService', () => {
   let moviesService: MoviesService;
@@ -212,6 +213,145 @@ describe('MoviesService', () => {
       );
 
       expect(moviesRepository.findOneBy).toHaveBeenCalledWith({ id: 99 });
+    });
+  });
+
+  describe('createMovie', () => {
+    it('should create and return a new movie with generated episodeId', async () => {
+      const dto: CreateMovieDto = {
+        title: 'Test Movie',
+        openingCrawl: 'A test crawl...',
+        director: 'Test Director',
+        producer: 'Test Producer',
+        releaseDate: '2000-01-01',
+        characters: ['Luke', 'Leia'],
+        planets: ['Tatooine'],
+        starships: [],
+        vehicles: [],
+        species: [],
+        url: 'https://example.com/movie',
+      };
+
+      const latestEpisode = { max: 5 };
+
+      moviesRepository.createQueryBuilder = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue(latestEpisode),
+      });
+
+      const mockCreated = { ...dto, episodeId: 6 };
+      moviesRepository.create = jest.fn().mockReturnValue(mockCreated);
+      moviesRepository.save = jest.fn().mockResolvedValue({
+        ...mockCreated,
+        id: 999,
+      });
+
+      const result = await moviesService.createMovie(dto);
+
+      expect(result).toEqual({
+        ...mockCreated,
+        id: 999,
+      });
+
+      expect(moviesRepository.create).toHaveBeenCalledWith({
+        ...dto,
+        episodeId: 6,
+        releaseDate: new Date(dto.releaseDate),
+      });
+      expect(moviesRepository.save).toHaveBeenCalled();
+    });
+
+    it('should start from episode 1 if there are no existing movies', async () => {
+      const dto: CreateMovieDto = {
+        title: 'First Movie',
+        openingCrawl: 'First crawl',
+        director: 'Director',
+        producer: 'Producer',
+        releaseDate: '1990-01-01',
+        characters: [],
+        planets: [],
+        starships: [],
+        vehicles: [],
+        species: [],
+        url: '',
+      };
+
+      moviesRepository.createQueryBuilder = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ max: null }),
+      });
+
+      moviesRepository.create = jest.fn().mockReturnValue({
+        ...dto,
+        episodeId: 1,
+      });
+      moviesRepository.save = jest.fn().mockResolvedValue({
+        ...dto,
+        episodeId: 1,
+        id: 1,
+      });
+
+      const result = await moviesService.createMovie(dto);
+
+      expect(result.episodeId).toBe(1);
+      expect(result.title).toBe(dto.title);
+    });
+  });
+
+  describe('updateMovie', () => {
+    it('should update an existing movie', async () => {
+      const dto: UpdateMovieDto = { title: 'Updated Title' };
+
+      const preloadResult = { id: 1, title: 'Updated Title' } as Movie;
+
+      moviesRepository.preload = jest.fn().mockResolvedValue(preloadResult);
+      moviesRepository.save = jest.fn().mockResolvedValue(preloadResult);
+
+      const result = await moviesService.updateMovie(1, dto);
+
+      expect(moviesRepository.preload).toHaveBeenCalledWith({
+        id: 1,
+        ...dto,
+        releaseDate: undefined,
+      });
+
+      expect(moviesRepository.save).toHaveBeenCalledWith(preloadResult);
+      expect(result).toEqual(preloadResult);
+    });
+
+    it('should throw NotFoundException if movie does not exist', async () => {
+      moviesRepository.preload = jest.fn().mockResolvedValue(null);
+
+      await expect(moviesService.updateMovie(999, {})).rejects.toThrow(
+        new NotFoundException('Movie with ID 999 not found.'),
+      );
+    });
+  });
+
+  describe('deleteMovie', () => {
+    it('should delete a movie successfully', async () => {
+      moviesRepository.delete = jest.fn().mockResolvedValue({ affected: 1 });
+
+      await expect(moviesService.deleteMovie(1)).resolves.toBeUndefined();
+      expect(moviesRepository.delete).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException if movie does not exist', async () => {
+      moviesRepository.delete = jest.fn().mockResolvedValue({ affected: 0 });
+
+      await expect(moviesService.deleteMovie(999)).rejects.toThrowError(
+        new NotFoundException('Movie with ID 999 not found.'),
+      );
+    });
+  });
+
+  describe('asynchandleCron', () => {
+    it('should trigger syncFromSwapi internally', async () => {
+      moviesService.syncFromSwapi = jest.fn().mockResolvedValue('ok');
+
+      await moviesService.asynchandleCron();
+
+      expect(moviesService.syncFromSwapi).toHaveBeenCalled();
     });
   });
 });

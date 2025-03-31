@@ -1,12 +1,60 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
+  <a href="http://nestjs.com/" target="blank">
+    <img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" />
+  </a>
 </p>
 
 # STAR WARS API
 
-## 🔑 Usuario de prueba ADMIN
+Backend desarrollado con NestJS para la gestión de películas del universo Star Wars, utilizando datos sincronizados desde la API pública [SWAPI](https://swapi.dev/).
 
-Para probar los endpoints que requieren permisos de administrador, se pueden usar las siguientes credenciales:
+---
+
+## 🛠️ Instalación
+
+1. Clonar el repositorio:
+
+   ```bash
+   git clone https://github.com/tu-usuario/tu-repo.git
+   cd tu-repo
+   ```
+
+2. Instalar dependencias:
+
+   ```bash
+   pnpm install
+   ```
+
+3. Copiar el archivo `.env.template` y renombrarlo a `.env`:
+
+   ```bash
+   cp .env.template .env
+   ```
+
+4. Agregar las variables de entorno entregadas por mail (como `JWT_SECRET`, configuración de la base de datos, etc.)
+
+5. Levantar la base de datos con Docker:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+6. Levantar la aplicación:
+
+   ```bash
+   pnpm start:dev
+   ```
+
+7. Ejecutar el endpoint de seed para insertar datos iniciales:
+   ```
+   POST http://localhost:3000/api/seed
+   ```
+
+---
+
+## 🧪 Usuario de prueba ADMIN
+
+Estas credenciales te permiten acceder a los endpoints protegidos con rol `ADMIN`:
 
 ```json
 {
@@ -15,20 +63,23 @@ Para probar los endpoints que requieren permisos de administrador, se pueden usa
 }
 ```
 
-1. Clonar proyecto
-2. `pnpm install`
-3. Copiar el archivo `.env.template` y renombrarlo a `.env`
-4. Agregar las variables de entorno anteriormente entregadas por mail
-5. Levantar la base de datos
+---
+
+## 📄 Documentación de la API
+
+Swagger disponible en:
 
 ```
-docker-compose up -d
+http://localhost:3000/api
 ```
 
-6. Levantar: `pnpm start:dev`
+---
 
-7. Ejecutar el POST del SEED
+## ✅ Características
 
-```
-http://localhost:3000/api/seed
-```
+- Autenticación con JWT
+- Roles de usuario (`USER`, `ADMIN`)
+- CRUD completo de películas
+- Sincronización con [SWAPI](https://swapi.dev/) (cron diario y endpoint manual)
+- Swagger documentado
+- Tests unitarios de servicios y controladores

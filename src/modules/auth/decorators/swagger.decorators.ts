@@ -1,7 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-import { LoginUserDto, RegisterResponseDto, RegisterUserDto } from '../dto';
+import {
+  ChangePasswordDto,
+  LoginUserDto,
+  RegisterResponseDto,
+  RegisterUserDto,
+} from '../dto';
 import { LoginResponseDto } from '../dto/login-response.dto';
 
 export function ApiRegisterUser() {
@@ -29,6 +34,65 @@ export function ApiRegisterUser() {
     ApiBody({
       type: RegisterUserDto,
       description: 'User registration information',
+    }),
+  );
+}
+
+export function ApiChangePassword() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Change user password',
+      description:
+        'Authenticated users can change their password by providing the current and new one.',
+    }),
+    ApiResponse({
+      status: 200,
+      description: 'Password changed successfully',
+      schema: {
+        example: {
+          message: 'Password changed successfully',
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: 'Bad Request - Validation failed',
+      schema: {
+        example: {
+          statusCode: 400,
+          message: [
+            'currentPassword must be a string',
+            'newPassword must be longer than or equal to 6 characters',
+          ],
+          error: 'Bad Request',
+        },
+      },
+    }),
+    ApiResponse({
+      status: 401,
+      description: 'Unauthorized - Missing or invalid credentials',
+      schema: {
+        example: {
+          statusCode: 401,
+          message: 'Unauthorized',
+          error: 'Unauthorized',
+        },
+      },
+    }),
+    ApiResponse({
+      status: 403,
+      description: 'Forbidden - Invalid current password or not allowed',
+      schema: {
+        example: {
+          statusCode: 403,
+          message: 'Current password is incorrect',
+          error: 'Forbidden',
+        },
+      },
+    }),
+    ApiBody({
+      type: ChangePasswordDto,
+      description: 'Current and new password payload',
     }),
   );
 }
