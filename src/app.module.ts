@@ -7,6 +7,8 @@ import { Auth } from './modules/auth/entities/auth.entity';
 import { UserController } from './modules/user/user.controller';
 import { UserModule } from './modules/user/user.module';
 import { SeedModule } from './modules/seed/seed.module';
+import { MoviesModule } from './modules/movies/movies.module';
+import { CommonModule } from './modules/common/common.module';
 
 @Module({
   imports: [
@@ -23,8 +25,10 @@ import { SeedModule } from './modules/seed/seed.module';
       synchronize: true,
     }),
     AuthModule,
+    CommonModule,
     UserModule,
     SeedModule,
+    MoviesModule,
   ],
 
   controllers: [UserController],

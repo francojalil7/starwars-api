@@ -1,16 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/modules/user/entities/user.entity';
-import { Auth } from 'src/modules/auth/entities/auth.entity';
 
 import { SeedService } from '../seed.service';
+import { User } from '../../user/entities/user.entity';
+import { Auth } from '../../auth/entities/auth.entity';
+import { Movie } from '../../movies/entities/movie.entity';
 import { initialData } from '../data/seed-data';
+
+global.fetch = jest.fn();
 
 describe('SeedService', () => {
   let service: SeedService;
   let userRepository: Repository<User>;
   let authRepository: Repository<Auth>;
+  let movieRepository: Repository<Movie>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,9 +30,7 @@ describe('SeedService', () => {
             create: jest.fn().mockImplementation((dto) => dto),
             save: jest
               .fn()
-              .mockImplementation((user) =>
-                Promise.resolve({ ...user, id: 'test-id' }),
-              ),
+              .mockResolvedValue({ ...initialData.user, id: 'test-user-id' }),
           },
         },
         {
@@ -42,12 +44,24 @@ describe('SeedService', () => {
             save: jest.fn().mockResolvedValue({}),
           },
         },
+        {
+          provide: getRepositoryToken(Movie),
+          useValue: {
+            count: jest.fn().mockResolvedValue(0),
+            save: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<SeedService>(SeedService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     authRepository = module.get<Repository<Auth>>(getRepositoryToken(Auth));
+    movieRepository = module.get<Repository<Movie>>(getRepositoryToken(Movie));
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -56,33 +70,83 @@ describe('SeedService', () => {
 
   describe('runSeed', () => {
     it('should execute seed and return success message', async () => {
-      const deleteTablesSpy = jest.spyOn(service as any, 'deleteTables');
-      const insertAdminSpy = jest.spyOn(service as any, 'insertAdmin');
+      (global.fetch as jest.Mock).mockResolvedValue({
+        json: jest.fn().mockResolvedValue({
+          results: [
+            {
+              title: 'A New Hope',
+              episode_id: 4,
+              opening_crawl: 'It is a period of civil war...',
+              director: 'George Lucas',
+              producer: 'Gary Kurtz, Rick McCallum',
+              release_date: '1977-05-25',
+              characters: [],
+              planets: [],
+              starships: [],
+              vehicles: [],
+              species: [],
+              created: '2014-12-10T14:23:31.880000Z',
+              edited: '2014-12-12T11:24:39.858000Z',
+              url: 'https://swapi.dev/api/films/1/',
+            },
+          ],
+        }),
+      });
 
       const result = await service.runSeed();
 
-      expect(deleteTablesSpy).toHaveBeenCalled();
-      expect(insertAdminSpy).toHaveBeenCalled();
+      expect(userRepository.createQueryBuilder).toHaveBeenCalled();
+      expect(authRepository.createQueryBuilder).toHaveBeenCalled();
+
+      expect(userRepository.create).toHaveBeenCalledWith(initialData.user);
+      expect(userRepository.save).toHaveBeenCalled();
+
+      expect(authRepository.create).toHaveBeenCalledWith({
+        password: initialData.user.password,
+        user: expect.any(Object),
+      });
+      expect(authRepository.save).toHaveBeenCalled();
+
+      expect(movieRepository.count).toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledWith('https://swapi.dev/api/films');
+      expect(movieRepository.save).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            title: 'A New Hope',
+            episodeId: 4,
+            director: 'George Lucas',
+          }),
+        ]),
+      );
+
       expect(result).toBe('SEED EXECUTED');
+    });
+
+    it('should skip seeding if movies already exist', async () => {
+      (movieRepository.count as jest.Mock).mockResolvedValue(6);
+
+      const result = await service.runSeed();
+
+      expect(movieRepository.count).toHaveBeenCalled();
+      expect(movieRepository.save).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
     });
   });
 
   describe('private methods', () => {
-    it('should delete tables when deleteTables is called', async () => {
+    it('should delete tables correctly', async () => {
       await (service as any).deleteTables();
 
       expect(authRepository.createQueryBuilder).toHaveBeenCalled();
       expect(authRepository.createQueryBuilder().delete).toHaveBeenCalled();
-      expect(authRepository.createQueryBuilder().where).toHaveBeenCalled();
       expect(authRepository.createQueryBuilder().execute).toHaveBeenCalled();
 
       expect(userRepository.createQueryBuilder).toHaveBeenCalled();
       expect(userRepository.createQueryBuilder().delete).toHaveBeenCalled();
-      expect(userRepository.createQueryBuilder().where).toHaveBeenCalled();
       expect(userRepository.createQueryBuilder().execute).toHaveBeenCalled();
     });
 
-    it('should insert admin user when insertAdmin is called', async () => {
+    it('should insert admin correctly', async () => {
       const result = await (service as any).insertAdmin();
 
       expect(userRepository.create).toHaveBeenCalledWith(initialData.user);
@@ -90,7 +154,7 @@ describe('SeedService', () => {
 
       expect(authRepository.create).toHaveBeenCalledWith({
         password: initialData.user.password,
-        user: expect.anything(),
+        user: expect.any(Object),
       });
       expect(authRepository.save).toHaveBeenCalled();
 

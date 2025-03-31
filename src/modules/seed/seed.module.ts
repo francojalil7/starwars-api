@@ -8,6 +8,7 @@ import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 import { User } from '../user/entities/user.entity';
 import { Auth } from '../auth/entities/auth.entity';
+import { Movie } from '../movies/entities/movie.entity';
 
 @Module({
   controllers: [SeedController],
@@ -15,7 +16,7 @@ import { Auth } from '../auth/entities/auth.entity';
   imports: [
     ConfigModule,
 
-    TypeOrmModule.forFeature([Auth, User]),
+    TypeOrmModule.forFeature([Auth, User, Movie]),
     AuthModule,
     UserModule,
   ],

@@ -1,5 +1,10 @@
 import { Reflector } from '@nestjs/core';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 
 import { META_ROLES } from '../decorators';
@@ -18,12 +23,16 @@ export class UserRoleGuard implements CanActivate {
       context.getHandler(),
     );
 
-    if (!validRole) return true;
-    if (validRole.length === 0) return true;
-
-    if (validRole.includes(user.role)) {
+    if (!validRole || validRole.length === 0) {
       return true;
     }
-    return true;
+
+    if (user && validRole.includes(user.role)) {
+      return true;
+    }
+
+    throw new ForbiddenException(
+      `You need this roles: ${validRole.join(', ')}`,
+    );
   }
 }
