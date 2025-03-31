@@ -83,3 +83,9 @@ http://localhost:3000/api
 - Sincronización con [SWAPI](https://swapi.dev/) (cron diario y endpoint manual)
 - Swagger documentado
 - Tests unitarios de servicios y controladores
+
+## 📚 Documentación
+
+Para ver y probar los endpoints desde Swagger:
+
+🔗 https://starwars-api-x6gk.onrender.com/api

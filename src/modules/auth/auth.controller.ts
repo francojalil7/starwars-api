@@ -9,7 +9,6 @@ import {
   ApiRegisterUser,
   Auth,
 } from './decorators';
-import { User } from '../user/entities/user.entity';
 import { RequestWithUser } from './interfaces';
 
 @ApiTags('Auth')
