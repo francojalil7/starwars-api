@@ -15,8 +15,8 @@ Backend desarrollado con NestJS para la gestión de películas del universo Star
 1. Clonar el repositorio:
 
    ```bash
-   git clone https://github.com/tu-usuario/tu-repo.git
-   cd tu-repo
+   git clone git@github.com:francojalil7/starwars-api.git
+   cd starwars-api
    ```
 
 2. Instalar dependencias:
